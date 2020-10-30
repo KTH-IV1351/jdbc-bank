@@ -31,7 +31,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>se.kth.iv1351.bankjdbc.server.startup.Server</mainClass>
+                    <mainClass>se.kth.iv1351.bankjdbc.startup.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

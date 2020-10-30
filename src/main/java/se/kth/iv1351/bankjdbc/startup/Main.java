@@ -21,27 +21,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id1212.db.bankjdbc.client.view;
+
+package se.kth.iv1351.bankjdbc.startup;
+
+import se.kth.iv1351.bankjdbc.controller.Controller;
+import se.kth.iv1351.bankjdbc.integration.BankDBException;
+import se.kth.iv1351.bankjdbc.view.BlockingInterpreter;
 
 /**
- * This class provides a thread safe output, all methods are synchronized. 
+ * Starts the chat client.
  */
-class ThreadSafeStdOut {
+public class Main {
     /**
-     * Prints the specified output to <code>System.out</code>,
-     * 
-     * @param output The output to print. 
+     * @param args There are no command line arguments.
      */
-    synchronized void print(String output) {
-        System.out.print(output);
-    }
-
-    /**
-     * Prints the specified output, plus a line break, to <code>System.out</code>,
-     * 
-     * @param output The output to print. 
-     */
-    synchronized void println(String output) {
-        System.out.println(output);
+    public static void main(String[] args) {
+        try {
+        new BlockingInterpreter(new Controller()).handleCmds();
+        } catch(BankDBException bdbe) {
+            System.out.println("Could not connect to Bank db.");
+            bdbe.printStackTrace();
+        }
     }
 }

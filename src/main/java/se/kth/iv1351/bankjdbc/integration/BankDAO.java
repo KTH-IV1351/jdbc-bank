@@ -1,4 +1,27 @@
-package se.kth.id1212.db.bankjdbc.server.integration;
+/*
+ * The MIT License (MIT)
+ * Copyright (c) 2020 Leif Lindbäck
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction,including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so,subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+package se.kth.iv1351.bankjdbc.integration;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -9,12 +32,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import se.kth.id1212.db.bankjdbc.server.model.Account;
-import se.kth.id1212.db.bankjdbc.common.AccountDTO;
+
+import se.kth.iv1351.bankjdbc.common.AccountDTO;
+import se.kth.iv1351.bankjdbc.model.Account;
 
 /**
- * This data access object (DAO) encapsulates all database calls in the bank application. No code
- * outside this class shall have any knowledge about the database.
+ * This data access object (DAO) encapsulates all database calls in the bank
+ * application. No code outside this class shall have any knowledge about the
+ * database.
  */
 public class BankDAO {
     private static final String TABLE_NAME = "ACCOUNT";
@@ -29,13 +54,13 @@ public class BankDAO {
     /**
      * Constructs a new DAO object connected to the specified database.
      *
-     * @param dbms       Database management system vendor. Currently supported types are "derby"
-     *                   and "mysql".
+     * @param dbms       Database management system vendor. Currently supported
+     *                   types are "derby" and "mysql".
      * @param datasource Database name.
      */
-    public BankDAO(String dbms, String datasource) throws BankDBException {
+    public BankDAO() throws BankDBException {
         try {
-            Connection connection = createDatasource(dbms, datasource);
+            Connection connection = createDatasource();
             prepareStatements(connection);
         } catch (ClassNotFoundException | SQLException exception) {
             throw new BankDBException("Could not connect to datasource.", exception);
@@ -46,8 +71,8 @@ public class BankDAO {
      * Searches for an account whose holder has the specified name.
      *
      * @param holderName The account holder's name
-     * @return The account whose holder has the specified name, or <code>null</code> if there is no
-     *         such account.
+     * @return The account whose holder has the specified name, or <code>null</code>
+     *         if there is no such account.
      * @throws BankDBException If failed to search for account.
      */
     public Account findAccountByName(String holderName) throws BankDBException {
@@ -74,7 +99,8 @@ public class BankDAO {
     /**
      * Retrieves all existing accounts.
      *
-     * @return A list with all existing accounts. The list is empty if there are no accounts.
+     * @return A list with all existing accounts. The list is empty if there are no
+     *         accounts.
      * @throws BankDBException If failed to search for account.
      */
     public List<Account> findAllAccounts() throws BankDBException {
@@ -82,8 +108,7 @@ public class BankDAO {
         List<Account> accounts = new ArrayList<>();
         try (ResultSet result = findAllAccountsStmt.executeQuery()) {
             while (result.next()) {
-                accounts.add(new Account(result.getString(HOLDER_COLUMN_NAME), result.getInt(
-                                         BALANCE_COLUMN_NAME)));
+                accounts.add(new Account(result.getString(HOLDER_COLUMN_NAME), result.getInt(BALANCE_COLUMN_NAME)));
             }
         } catch (SQLException sqle) {
             throw new BankDBException(failureMsg, sqle);
@@ -115,8 +140,9 @@ public class BankDAO {
      * Deletes the specified account.
      *
      * @param account The account to delete.
-     * @return <code>true</code> if the specified holder had an account and it was deleted,
-     *         <code>false</code> if the holder did not have an account and nothing was done.
+     * @return <code>true</code> if the specified holder had an account and it was
+     *         deleted, <code>false</code> if the holder did not have an account and
+     *         nothing was done.
      * @throws BankDBException If unable to delete the specified account.
      */
     public void deleteAccount(AccountDTO account) throws BankDBException {
@@ -145,14 +171,12 @@ public class BankDAO {
         }
     }
 
-    private Connection createDatasource(String dbms, String datasource) throws
-            ClassNotFoundException, SQLException, BankDBException {
-        Connection connection = connectToBankDB(dbms, datasource);
+    private Connection createDatasource() throws ClassNotFoundException, SQLException, BankDBException {
+        Connection connection = connectToBankDB();
         if (!bankTableExists(connection)) {
             Statement statement = connection.createStatement();
-            statement.executeUpdate("CREATE TABLE " + TABLE_NAME
-                                    + " (" + HOLDER_COLUMN_NAME + " VARCHAR(32) PRIMARY KEY, "
-                                    + BALANCE_COLUMN_NAME + " FLOAT)");
+            statement.executeUpdate("CREATE TABLE " + TABLE_NAME + " (" + HOLDER_COLUMN_NAME
+                    + " VARCHAR(32) PRIMARY KEY, " + BALANCE_COLUMN_NAME + " FLOAT)");
         }
         return connection;
     }
@@ -161,8 +185,9 @@ public class BankDAO {
         int tableNameColumn = 3;
         DatabaseMetaData dbm = connection.getMetaData();
         try (ResultSet rs = dbm.getTables(null, null, null, null)) {
-            for (; rs.next();) {
-                if (rs.getString(tableNameColumn).equals(TABLE_NAME)) {
+            while (rs.next()) {
+                String tableName = rs.getString(tableNameColumn);
+                if (tableName.equalsIgnoreCase(TABLE_NAME)) {
                     return true;
                 }
             }
@@ -170,34 +195,17 @@ public class BankDAO {
         }
     }
 
-    private Connection connectToBankDB(String dbms, String datasource)
-            throws ClassNotFoundException, SQLException, BankDBException {
-        if (dbms.equalsIgnoreCase("derby")) {
-            Class.forName("org.apache.derby.jdbc.ClientXADataSource");
-            return DriverManager.getConnection(
-                    "jdbc:derby://localhost:1527/" + datasource + ";create=true");
-        } else if (dbms.equalsIgnoreCase("mysql")) {
-            Class.forName("com.mysql.jdbc.Driver");
-            return DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/" + datasource, "user", "password");
-        } else {
-            throw new BankDBException("Unable to create datasource, unknown dbms.");
-        }
+    private Connection connectToBankDB() throws ClassNotFoundException, SQLException {
+        Class.forName("org.postgresql.Driver");
+        return DriverManager.getConnection("jdbc:postgresql://localhost:5432/bankdb", "postgres", "postgres");
     }
 
     private void prepareStatements(Connection connection) throws SQLException {
-        createAccountStmt = connection.prepareStatement("INSERT INTO "
-                                                        + TABLE_NAME + " VALUES (?, ?)");
-        findAccountStmt = connection.prepareStatement("SELECT * from "
-                                                      + TABLE_NAME + " WHERE NAME = ?");
-        findAllAccountsStmt = connection.prepareStatement("SELECT * from "
-                                                          + TABLE_NAME);
-        deleteAccountStmt = connection.prepareStatement("DELETE FROM "
-                                                        + TABLE_NAME
-                                                        + " WHERE name = ?");
-        changeBalanceStmt = connection.prepareStatement("UPDATE "
-                                                        + TABLE_NAME
-                                                        + " SET balance = ? WHERE name= ? ");
+        createAccountStmt = connection.prepareStatement("INSERT INTO " + TABLE_NAME + " VALUES (?, ?)");
+        findAccountStmt = connection.prepareStatement("SELECT * from " + TABLE_NAME + " WHERE NAME = ?");
+        findAllAccountsStmt = connection.prepareStatement("SELECT * from " + TABLE_NAME);
+        deleteAccountStmt = connection.prepareStatement("DELETE FROM " + TABLE_NAME + " WHERE name = ?");
+        changeBalanceStmt = connection.prepareStatement("UPDATE " + TABLE_NAME + " SET balance = ? WHERE name= ? ");
     }
 
 }

@@ -1,7 +1,30 @@
-package se.kth.id1212.db.bankjdbc.server.model;
+/*
+ * The MIT License (MIT)
+ * Copyright (c) 2020 Leif Lindbäck
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction,including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so,subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 
-import se.kth.id1212.db.bankjdbc.common.AccountDTO;
-import se.kth.id1212.db.bankjdbc.server.integration.BankDAO;
+package se.kth.iv1351.bankjdbc.model;
+
+import se.kth.iv1351.bankjdbc.common.AccountDTO;
+import se.kth.iv1351.bankjdbc.integration.BankDAO;
 
 /**
  * An account in the bank.
@@ -12,8 +35,8 @@ public class Account implements AccountDTO {
     private transient BankDAO bankDB;
 
     /**
-     * Creates an account for the specified holder with the specified balance. The account object
-     * will have a database connection.
+     * Creates an account for the specified holder with the specified balance. The
+     * account object will have a database connection.
      *
      * @param holderName The account holder's holderName.
      * @param balance    The initial balance.
@@ -26,8 +49,8 @@ public class Account implements AccountDTO {
     }
 
     /**
-     * Creates an account for the specified holder with the specified balance. The account object
-     * will not have a database connection.
+     * Creates an account for the specified holder with the specified balance. The
+     * account object will not have a database connection.
      *
      * @param holderName The account holder's holderName.
      * @param balance    The initial balance.
@@ -50,8 +73,8 @@ public class Account implements AccountDTO {
      * Deposits the specified amount.
      *
      * @param amount The amount to deposit.
-     * @throws AccountException If the specified amount is negative, or if unable to perform the
-     *                          update.
+     * @throws AccountException If the specified amount is negative, or if unable to
+     *                          perform the update.
      */
     public void deposit(int amount) throws RejectedException {
         if (amount < 0) {
@@ -65,8 +88,9 @@ public class Account implements AccountDTO {
      * Withdraws the specified amount.
      *
      * @param amount The amount to withdraw.
-     * @throws AccountException If the specified amount is negative, if the amount is larger than
-     *                          the balance, or if unable to perform the update.
+     * @throws AccountException If the specified amount is negative, if the amount
+     *                          is larger than the balance, or if unable to perform
+     *                          the update.
      */
     public void withdraw(int amount) throws RejectedException {
         if (amount < 0) {
@@ -74,8 +98,7 @@ public class Account implements AccountDTO {
                     "Tried to withdraw negative value, illegal value: " + amount + "." + accountInfo());
         }
         if (balance - amount < 0) {
-            throw new RejectedException(
-                    "Tried to overdraft, illegal value: " + amount + "." + accountInfo());
+            throw new RejectedException("Tried to overdraft, illegal value: " + amount + "." + accountInfo());
         }
         changeBalance(balance - amount, "Could not withdraw.");
     }

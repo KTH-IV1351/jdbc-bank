@@ -21,14 +21,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id1212.db.bankjdbc.client.view;
 
-import java.util.ArrayList;
-import java.util.List;
+package se.kth.iv1351.bankjdbc.view;
 
 /**
- * One line of user input, which should be a command and parameters associated with that command (if
- * any).
+ * One line of user input, which should be a command and parameters associated
+ * with that command (if any).
  */
 class CmdLine {
     private static final String PARAM_DELIMETER = " ";
@@ -53,7 +51,7 @@ class CmdLine {
     Command getCmd() {
         return cmd;
     }
-    
+
     /**
      * @return The entire user input, without any modification.
      */
@@ -62,13 +60,12 @@ class CmdLine {
     }
 
     /**
-     * Returns the parameter with the specified index. The first parameter has index zero.
-     * Parameters are separated by a blank character (" "). A Character sequence enclosed in quotes
-     * form one single parameter, even if it contains blanks.
+     * Returns the parameter with the specified index. The first parameter has index
+     * zero. Parameters are separated by a blank character (" ").
      *
      * @param index The index of the searched parameter.
-     * @return The parameter with the specified index, or <code>null</code> if there is no parameter
-     *         with that index.
+     * @return The parameter with the specified index, or <code>null</code> if there
+     *         is no parameter with that index.
      */
     String getParameter(int index) {
         if (params == null) {
@@ -91,45 +88,29 @@ class CmdLine {
     private void parseCmd(String enteredLine) {
         int cmdNameIndex = 0;
         try {
-            String[] enteredTokens = removeExtraSpaces(enteredLine).split(PARAM_DELIMETER);
+            String trimmed = removeExtraSpaces(enteredLine);
+            if (trimmed == null) {
+                cmd = Command.ILLEGAL_COMMAND;
+                return;
+            }
+            String[] enteredTokens = trimmed.split(PARAM_DELIMETER);
             cmd = Command.valueOf(enteredTokens[cmdNameIndex].toUpperCase());
-        } catch (Throwable failedToReadCmd) {
+        } catch (Exception failedToReadCmd) {
             cmd = Command.ILLEGAL_COMMAND;
         }
     }
 
     private void extractParams(String enteredLine) {
         if (enteredLine == null) {
+            params = null;
             return;
         }
-        String readyForParsing = removeExtraSpaces(removeCmd(enteredLine));
-        List<String> params = new ArrayList<>();
-        int start = 0;
-        boolean inQuotes = false;
-        for (int index = 0; index < readyForParsing.length(); index++) {
-            if (currentCharIsQuote(readyForParsing, index)) {
-                inQuotes = !inQuotes;
-            }
-            if (reachedEndOfString(readyForParsing, index)) {
-                addParam(params, readyForParsing, start, index);
-            } else if (timeToSplit(readyForParsing, index, inQuotes)) {
-                addParam(params, readyForParsing, start, index);
-                start = index + 1;
-            }
+        String paramPartOfCmd = removeExtraSpaces(removeCmd(enteredLine));
+        if (paramPartOfCmd == null) {
+            params = null;
+            return;
         }
-        this.params = params.toArray(new String[0]);
-    }
-
-    private void addParam(List<String> params, String paramSource, int start, int index) {
-        if (reachedEndOfString(paramSource, index)) {
-            params.add(removeQuotes(paramSource.substring(start)));
-        } else {
-            params.add(removeQuotes(paramSource.substring(start, index)));
-        }
-    }
-
-    private boolean currentCharIsQuote(String readyForParsing, int index) {
-        return readyForParsing.charAt(index) == '\"';
+        params = paramPartOfCmd.split(PARAM_DELIMETER);
     }
 
     private String removeCmd(String enteredLine) {
@@ -139,17 +120,5 @@ class CmdLine {
         int indexAfterCmd = enteredLine.toUpperCase().indexOf(cmd.name()) + cmd.name().length();
         String withoutCmd = enteredLine.substring(indexAfterCmd, enteredLine.length());
         return withoutCmd.trim();
-    }
-
-    private boolean timeToSplit(String source, int index, boolean dontSplit) {
-        return source.charAt(index) == PARAM_DELIMETER.charAt(0) && !dontSplit;
-    }
-
-    private boolean reachedEndOfString(String source, int index) {
-        return index == (source.length() - 1);
-    }
-
-    private String removeQuotes(String source) {
-        return source.replaceAll("\"", "");
     }
 }

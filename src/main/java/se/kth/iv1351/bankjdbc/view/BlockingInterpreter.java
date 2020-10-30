@@ -21,48 +21,49 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id1212.db.bankjdbc.client.view;
+
+package se.kth.iv1351.bankjdbc.view;
 
 import java.util.List;
 import java.util.Scanner;
-import se.kth.id1212.db.bankjdbc.common.Bank;
-import se.kth.id1212.db.bankjdbc.common.AccountDTO;
+
+import se.kth.iv1351.bankjdbc.common.AccountDTO;
+import se.kth.iv1351.bankjdbc.controller.Controller;
 
 /**
- * Reads and interprets user commands. The command interpreter will run in a separate thread, which
- * is started by calling the <code>start</code> method. Commands are executed in a thread pool, a
- * new prompt will be displayed as soon as a command is submitted to the pool, without waiting for
- * command execution to complete.
+ * Reads and interprets user commands. The command interpreter will run in a
+ * separate thread, which is started by calling the <code>start</code> method.
+ * Commands are executed in a thread pool, a new prompt will be displayed as
+ * soon as a command is submitted to the pool, without waiting for command
+ * execution to complete.
  */
-public class NonBlockingInterpreter implements Runnable {
+public class BlockingInterpreter {
     private static final String PROMPT = "> ";
     private final Scanner console = new Scanner(System.in);
-    private final ThreadSafeStdOut outMgr = new ThreadSafeStdOut();
-    private Bank bank;
-    private boolean receivingCmds = false;
+    private Controller ctrl;
+    private boolean keepReceivingCmds = false;
 
     /**
-     * Starts the interpreter. The interpreter will be waiting for user input when this method
-     * returns. Calling <code>start</code> on an interpreter that is already started has no effect.
+     * Starts the interpreter. The interpreter will be waiting for user input when
+     * this method returns. Calling <code>start</code> on an interpreter that is
+     * already started has no effect.
      *
      * @param server The server with which this chat client will communicate.
      */
-    public void start(Bank bank) {
-        this.bank = bank;
-        if (receivingCmds) {
-            return;
-        }
-        receivingCmds = true;
-        new Thread(this).start();
+    public BlockingInterpreter(Controller ctrl) {
+        this.ctrl = ctrl;
+    }
+
+    public void stop() {
+        keepReceivingCmds = false;
     }
 
     /**
      * Interprets and performs user commands.
      */
-    @Override
-    public void run() {
-        AccountDTO acct = null;
-        while (receivingCmds) {
+    public void handleCmds() {
+        keepReceivingCmds = true;
+        while (keepReceivingCmds) {
             try {
                 CmdLine cmdLine = new CmdLine(readNextLine());
                 switch (cmdLine.getCmd()) {
@@ -75,46 +76,43 @@ public class NonBlockingInterpreter implements Runnable {
                         }
                         break;
                     case QUIT:
-                        receivingCmds = false;
+                        keepReceivingCmds = false;
                         break;
                     case NEW:
-                        bank.createAccount(cmdLine.getParameter(0));
-                        ;
+                        ctrl.createAccount(cmdLine.getParameter(0));
                         break;
                     case DELETE:
-                        acct = bank.getAccount(cmdLine.getParameter(0));
-                        bank.deleteAccount(acct);
+                        ctrl.deleteAccount(ctrl.getAccount(cmdLine.getParameter(0)));
                         break;
                     case LIST:
-                        List<? extends AccountDTO> accounts = bank.listAccounts();
+                        List<? extends AccountDTO> accounts = ctrl.listAccounts();
                         for (AccountDTO account : accounts) {
-                            outMgr.println(account.getHolderName() + ": " + account.getBalance());
+                            System.out.println(account.getHolderName() + ": " + account.getBalance());
                         }
                         break;
                     case DEPOSIT:
-                        acct = bank.getAccount(cmdLine.getParameter(0));
-                        bank.deposit(acct, Integer.parseInt(cmdLine.getParameter(1)));
+                        AccountDTO acctForDep = ctrl.getAccount(cmdLine.getParameter(0));
+                        ctrl.deposit(acctForDep, Integer.parseInt(cmdLine.getParameter(1)));
                         break;
                     case WITHDRAW:
-                        acct = bank.getAccount(cmdLine.getParameter(0));
-                        bank.withdraw(acct, Integer.parseInt(cmdLine.getParameter(1)));
+                        AccountDTO acctForWith = ctrl.getAccount(cmdLine.getParameter(0));
+                        ctrl.withdraw(acctForWith, Integer.parseInt(cmdLine.getParameter(1)));
                         break;
                     case BALANCE:
-                        acct = bank.getAccount(cmdLine.getParameter(0));
-                        outMgr.println(Integer.toString(acct.getBalance()));
+                        System.out.println(Integer.toString(ctrl.getAccount(cmdLine.getParameter(0)).getBalance()));
                         break;
                     default:
-                        outMgr.println("illegal command");
+                        System.out.println("illegal command");
                 }
             } catch (Exception e) {
-                outMgr.println("Operation failed");
-                outMgr.println(e.getMessage());
+                System.out.println("Operation failed");
+                System.out.println(e.getMessage());
             }
         }
     }
 
     private String readNextLine() {
-        outMgr.print(PROMPT);
+        System.out.print(PROMPT);
         return console.nextLine();
     }
 }

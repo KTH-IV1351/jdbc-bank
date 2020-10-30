@@ -21,7 +21,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package se.kth.id1212.db.bankjdbc.client.view;
+
+package se.kth.iv1351.bankjdbc.view;
 
 /**
  * Defines all commands that can be performed by a user of the chat application.
