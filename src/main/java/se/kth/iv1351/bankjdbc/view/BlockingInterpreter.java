@@ -31,11 +31,8 @@ import se.kth.iv1351.bankjdbc.controller.Controller;
 import se.kth.iv1351.bankjdbc.model.AccountDTO;
 
 /**
- * Reads and interprets user commands. The command interpreter will run in a
- * separate thread, which is started by calling the <code>start</code> method.
- * Commands are executed in a thread pool, a new prompt will be displayed as
- * soon as a command is submitted to the pool, without waiting for command
- * execution to complete.
+ * Reads and interprets user commands. This command interpreter is blocking, the user
+ * interface does not react to user input while a command is being executed.
  */
 public class BlockingInterpreter {
     private static final String PROMPT = "> ";
@@ -44,22 +41,25 @@ public class BlockingInterpreter {
     private boolean keepReceivingCmds = false;
 
     /**
-     * Starts the interpreter. The interpreter will be waiting for user input when
-     * this method returns. Calling <code>start</code> on an interpreter that is
-     * already started has no effect.
-     *
-     * @param server The server with which this chat client will communicate.
+     * Creates a new instance that will use the specified controller for all operations.
+     * 
+     * @param ctrl The controller used by this instance.
      */
     public BlockingInterpreter(Controller ctrl) {
         this.ctrl = ctrl;
     }
 
+    /**
+     * Stops the commend interpreter.
+     */
     public void stop() {
         keepReceivingCmds = false;
     }
 
     /**
-     * Interprets and performs user commands.
+     * Interprets and performs user commands. This method will not return until the
+     * UI has been stopped. The UI is stopped either when the user gives the
+     * "quit" command, or when the method <code>stop()</code> is called.
      */
     public void handleCmds() {
         keepReceivingCmds = true;

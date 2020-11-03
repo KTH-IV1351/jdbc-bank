@@ -59,11 +59,7 @@ public class BankDAO {
     private PreparedStatement changeBalanceStmt;
 
     /**
-     * Constructs a new DAO object connected to the specified database.
-     *
-     * @param dbms       Database management system vendor. Currently supported
-     *                   types are "derby" and "mysql".
-     * @param datasource Database name.
+     * Constructs a new DAO object connected to the bank database.
      */
     public BankDAO() throws BankDBException {
         try {
