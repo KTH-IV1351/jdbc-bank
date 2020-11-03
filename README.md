@@ -18,7 +18,7 @@ This is an example of how an integration layer can be used to organize an applic
 1. Build the project with the command `mvn install`
 1. Run the program with the command `mvn exec:java`
 
-## Commands for the bankprogram
+## Commands for the bank program
 
 * `help` displays all commands.
 * `new <holder name>` creates a new account owned by the specified holder.
