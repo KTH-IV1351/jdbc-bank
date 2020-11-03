@@ -21,12 +21,17 @@
  * THE SOFTWARE.
  */
 
-package se.kth.iv1351.bankjdbc.common;
+package se.kth.iv1351.bankjdbc.model;
 
 /**
  * Specifies a read-only view of an account.
  */
 public interface AccountDTO {
+    /**
+     * @return The account number.
+     */
+    public String getAccountNo();
+
     /**
      * @return The balance.
      */
