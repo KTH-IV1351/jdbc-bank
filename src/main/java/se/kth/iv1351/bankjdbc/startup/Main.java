@@ -29,7 +29,7 @@ import se.kth.iv1351.bankjdbc.integration.BankDBException;
 import se.kth.iv1351.bankjdbc.view.BlockingInterpreter;
 
 /**
- * Starts the chat client.
+ * Starts the bank client.
  */
 public class Main {
     /**
