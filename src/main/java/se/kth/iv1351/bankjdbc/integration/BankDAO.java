@@ -54,6 +54,7 @@ public class BankDAO {
     private PreparedStatement createAccountStmt;
     private PreparedStatement findAccountByNameStmt;
     private PreparedStatement findAccountByAcctNoStmt;
+    private PreparedStatement findAccountByAcctNoStmtLockingForUpdate;
     private PreparedStatement findAllAccountsStmt;
     private PreparedStatement deleteAccountStmt;
     private PreparedStatement changeBalanceStmt;
@@ -108,22 +109,38 @@ public class BankDAO {
      * Searches for the account with the specified account number.
      *
      * @param acctNo The account number.
+     * @param lockExclusive If true, it will not be possible to perform UPDATE 
+     *                      or DELETE statements on the selected row in the
+     *                      current transaction. Also, the transaction will not
+     *                      be committed when this method returns. If false, no
+     *                      exclusive locks will be created, and the transaction will
+     *                      be committed when this method returns.
      * @return The account with the specified account number, or <code>null</code> if 
      *         there is no such account.
      * @throws BankDBException If failed to search for the account.
      */
-    public Account findAccountByAcctNo(String acctNo) throws BankDBException {
+    public Account findAccountByAcctNo(String acctNo, boolean lockExclusive)
+                                       throws BankDBException {
+    PreparedStatement stmtToExecute;
+        if (lockExclusive) {
+            stmtToExecute = findAccountByAcctNoStmtLockingForUpdate;
+        } else {
+            stmtToExecute = findAccountByAcctNoStmt;
+        }
+
         String failureMsg = "Could not search for specified account.";
         ResultSet result = null;
         try {
-            findAccountByAcctNoStmt.setString(1, acctNo);
-            result = findAccountByAcctNoStmt.executeQuery();
+            stmtToExecute.setString(1, acctNo);
+            result = stmtToExecute.executeQuery();
             if (result.next()) {
                 return new Account(result.getString(ACCT_NO_COLUMN_NAME),
                                    result.getString(HOLDER_COLUMN_NAME),
                                    result.getInt(BALANCE_COLUMN_NAME));
             }
-            connection.commit();
+            if (!lockExclusive) {
+                connection.commit();
+            }
         } catch (SQLException sqle) {
             handleException(failureMsg, sqle);
         } finally {
@@ -227,11 +244,24 @@ public class BankDAO {
         }
     }
 
+    /**
+     * Commits the current transaction.
+     * 
+     * @throws BankDBException If unable to commit the current transaction.
+     */
+    public void commit() throws BankDBException {
+        try {
+            connection.commit();
+        } catch (SQLException e) {
+            handleException("Failed to commit", e);
+        }
+    }
+
     private void connectToBankDB() throws ClassNotFoundException, SQLException {
         connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bankdb",
                                                  "postgres", "postgres");
         // connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankdb",
-        //                                          "root", "javajava");
+        //                                          "mysql", "mysql");
         connection.setAutoCommit(false);
     }
 
@@ -248,9 +278,14 @@ public class BankDAO {
 
         findAccountByAcctNoStmt = connection.prepareStatement("SELECT a." + ACCT_NO_COLUMN_NAME
             + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "
-            + ACCT_TABLE_NAME + " a INNER JOIN " + HOLDER_TABLE_NAME + " h ON a."
-            + HOLDER_FK_COLUMN_NAME + " = h." + HOLDER_PK_COLUMN_NAME + " WHERE a."
-            + ACCT_NO_COLUMN_NAME + " = ?");
+            + ACCT_TABLE_NAME + " a INNER JOIN " + HOLDER_TABLE_NAME + " h USING ("
+            + HOLDER_PK_COLUMN_NAME + ") WHERE a." + ACCT_NO_COLUMN_NAME + " = ?");
+
+        findAccountByAcctNoStmtLockingForUpdate = connection.prepareStatement("SELECT a." 
+            + ACCT_NO_COLUMN_NAME + ", a." + BALANCE_COLUMN_NAME + ", h." 
+            + HOLDER_COLUMN_NAME + " from " + ACCT_TABLE_NAME + " a INNER JOIN " 
+            + HOLDER_TABLE_NAME + " h USING (" + HOLDER_PK_COLUMN_NAME + ") WHERE a." 
+            + ACCT_NO_COLUMN_NAME + " = ? FOR UPDATE");
 
         findAccountByNameStmt = connection.prepareStatement("SELECT a." + ACCT_NO_COLUMN_NAME
             + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "

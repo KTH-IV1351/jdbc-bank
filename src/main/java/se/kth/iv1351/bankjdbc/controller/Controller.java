@@ -74,8 +74,8 @@ public class Controller {
     /**
      * Lists all accounts in the whole bank.
      * 
-     * @return A list containing all accounts. The list is empty if there 
-     *         are no accounts.
+     * @return A list containing all accounts. The list is empty if there are no
+     *         accounts.
      * @throws AccountException If unable to retrieve accounts.
      */
     public List<? extends AccountDTO> getAllAccounts() throws AccountException {
@@ -91,11 +91,11 @@ public class Controller {
      * 
      * @param holderName The holder who's accounts shall be listed.
      * @return A list with all accounts owned by the specified holder. The list is
-     *         empty if the holder does not have any accounts, or if there is no such holder.
+     *         empty if the holder does not have any accounts, or if there is no
+     *         such holder.
      * @throws AccountException If unable to retrieve the holder's accounts.
      */
-    public List<? extends AccountDTO> getAccountsForHolder(String holderName)
-                                                              throws AccountException {
+    public List<? extends AccountDTO> getAccountsForHolder(String holderName) throws AccountException {
         if (holderName == null) {
             return new ArrayList<>();
         }
@@ -111,8 +111,8 @@ public class Controller {
      * Retrieves the account with the specified number.
      * 
      * @param acctNo The number of the searched account.
-     * @return The account with the specified account number, or <code>null</code> if 
-     *         there is no such account.
+     * @return The account with the specified account number, or <code>null</code>
+     *         if there is no such account.
      * @throws AccountException If unable to retrieve the account.
      */
     public AccountDTO getAccount(String acctNo) throws AccountException {
@@ -121,19 +121,20 @@ public class Controller {
         }
 
         try {
-            return bankDb.findAccountByAcctNo(acctNo);
+            return bankDb.findAccountByAcctNo(acctNo, false);
         } catch (Exception e) {
             throw new AccountException("Could not search for account.", e);
         }
     }
 
     /**
-     * Deposits the specified amount to the account with the specified account number.
+     * Deposits the specified amount to the account with the specified account
+     * number.
      * 
-     * @param acctNo             The number of the account to which to deposit.
-     * @param amt                The amount to deposit.
-     * @throws RejectedException If not allowed to deposit the specified amount. 
-     * @throws AccountException  If failed to deposit. 
+     * @param acctNo The number of the account to which to deposit.
+     * @param amt    The amount to deposit.
+     * @throws RejectedException If not allowed to deposit the specified amount.
+     * @throws AccountException  If failed to deposit.
      */
     public void deposit(String acctNo, int amt) throws RejectedException, AccountException {
         String failureMsg = "Could not deposit to account: " + acctNo;
@@ -143,21 +144,25 @@ public class Controller {
         }
 
         try {
-            Account acct = bankDb.findAccountByAcctNo(acctNo);
+            Account acct = bankDb.findAccountByAcctNo(acctNo, true);
             acct.deposit(amt);
             bankDb.updateAccount(acct);
         } catch (BankDBException bdbe) {
             throw new AccountException(failureMsg, bdbe);
+        } catch (Exception e) {
+            commitOngoingTransaction(failureMsg);
+            throw e;
         }
     }
 
     /**
-     * Withdraws the specified amount from the account with the specified account number.
+     * Withdraws the specified amount from the account with the specified account
+     * number.
      * 
-     * @param acctNo             The number of the account from which to withdraw.
-     * @param amt                The amount to withdraw.
-     * @throws RejectedException If not allowed to withdraw the specified amount. 
-     * @throws AccountException  If failed to withdraw. 
+     * @param acctNo The number of the account from which to withdraw.
+     * @param amt    The amount to withdraw.
+     * @throws RejectedException If not allowed to withdraw the specified amount.
+     * @throws AccountException  If failed to withdraw.
      */
     public void withdraw(String acctNo, int amt) throws RejectedException, AccountException {
         String failureMsg = "Could not withdraw from account: " + acctNo;
@@ -167,11 +172,22 @@ public class Controller {
         }
 
         try {
-            Account acct = bankDb.findAccountByAcctNo(acctNo);
+            Account acct = bankDb.findAccountByAcctNo(acctNo, true);
             acct.withdraw(amt);
             bankDb.updateAccount(acct);
         } catch (BankDBException bdbe) {
-            throw new AccountException("Could not withdraw from account: " + acctNo, bdbe);
+            throw new AccountException(failureMsg, bdbe);
+        } catch (Exception e) {
+            commitOngoingTransaction(failureMsg);
+            throw e;
+        }
+    }
+
+    private void commitOngoingTransaction(String failureMsg) throws AccountException {
+        try {
+            bankDb.commit();
+        } catch (BankDBException bdbe) {
+            throw new AccountException(failureMsg, bdbe);
         }
     }
 
