@@ -108,20 +108,20 @@ public class BankDAO {
     /**
      * Searches for the account with the specified account number.
      *
-     * @param acctNo The account number.
-     * @param lockExclusive If true, it will not be possible to perform UPDATE 
+     * @param acctNo        The account number.
+     * @param lockExclusive If true, it will not be possible to perform UPDATE
      *                      or DELETE statements on the selected row in the
      *                      current transaction. Also, the transaction will not
      *                      be committed when this method returns. If false, no
-     *                      exclusive locks will be created, and the transaction will
-     *                      be committed when this method returns.
-     * @return The account with the specified account number, or <code>null</code> if 
-     *         there is no such account.
+     *                      exclusive locks will be created, and the transaction
+     *                      will be committed when this method returns.
+     * @return The account with the specified account number, or <code>null</code>
+     *         if there is no such account.
      * @throws BankDBException If failed to search for the account.
      */
     public Account findAccountByAcctNo(String acctNo, boolean lockExclusive)
-                                       throws BankDBException {
-    PreparedStatement stmtToExecute;
+            throws BankDBException {
+        PreparedStatement stmtToExecute;
         if (lockExclusive) {
             stmtToExecute = findAccountByAcctNoStmtLockingForUpdate;
         } else {
@@ -135,8 +135,8 @@ public class BankDAO {
             result = stmtToExecute.executeQuery();
             if (result.next()) {
                 return new Account(result.getString(ACCT_NO_COLUMN_NAME),
-                                   result.getString(HOLDER_COLUMN_NAME),
-                                   result.getInt(BALANCE_COLUMN_NAME));
+                        result.getString(HOLDER_COLUMN_NAME),
+                        result.getInt(BALANCE_COLUMN_NAME));
             }
             if (!lockExclusive) {
                 connection.commit();
@@ -153,7 +153,7 @@ public class BankDAO {
      * Searches for all accounts whose holder has the specified name.
      *
      * @param holderName The account holder's name
-     * @return A list with all accounts whose holder has the specified name, 
+     * @return A list with all accounts whose holder has the specified name,
      *         the list is empty if there are no such account.
      * @throws BankDBException If failed to search for accounts.
      */
@@ -166,8 +166,8 @@ public class BankDAO {
             result = findAccountByNameStmt.executeQuery();
             while (result.next()) {
                 accounts.add(new Account(result.getString(ACCT_NO_COLUMN_NAME),
-                                         result.getString(HOLDER_COLUMN_NAME),
-                                         result.getInt(BALANCE_COLUMN_NAME)));
+                        result.getString(HOLDER_COLUMN_NAME),
+                        result.getInt(BALANCE_COLUMN_NAME)));
             }
             connection.commit();
         } catch (SQLException sqle) {
@@ -191,8 +191,8 @@ public class BankDAO {
         try (ResultSet result = findAllAccountsStmt.executeQuery()) {
             while (result.next()) {
                 accounts.add(new Account(result.getString(ACCT_NO_COLUMN_NAME),
-                                         result.getString(HOLDER_COLUMN_NAME),
-                                         result.getInt(BALANCE_COLUMN_NAME)));
+                        result.getString(HOLDER_COLUMN_NAME),
+                        result.getInt(BALANCE_COLUMN_NAME)));
             }
             connection.commit();
         } catch (SQLException sqle) {
@@ -203,8 +203,8 @@ public class BankDAO {
 
     /**
      * Changes the balance of the account with the number of the specified
-     * <code>AccountDTO</code> object. The balance is set to the value in the specified
-     * <code>AccountDTO</code>.
+     * <code>AccountDTO</code> object. The balance is set to the value in the
+     * specified <code>AccountDTO</code>.
      *
      * @param account The account to update.
      * @throws BankDBException If unable to update the specified account.
@@ -259,58 +259,60 @@ public class BankDAO {
 
     private void connectToBankDB() throws ClassNotFoundException, SQLException {
         connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/bankdb",
-                                                 "postgres", "postgres");
-        // connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/bankdb",
-        //                                          "mysql", "mysql");
+                "postgres", "postgres");
+        // connection =
+        // DriverManager.getConnection("jdbc:mysql://localhost:3306/bankdb",
+        // "mysql", "mysql");
         connection.setAutoCommit(false);
     }
 
     private void prepareStatements() throws SQLException {
         createHolderStmt = connection.prepareStatement("INSERT INTO " + HOLDER_TABLE_NAME
-            + "(" + HOLDER_COLUMN_NAME + ") VALUES (?)");
+                + "(" + HOLDER_COLUMN_NAME + ") VALUES (?)");
 
         createAccountStmt = connection.prepareStatement("INSERT INTO " + ACCT_TABLE_NAME
-            + "(" + ACCT_NO_COLUMN_NAME + ", " + BALANCE_COLUMN_NAME + ", "
-            + HOLDER_FK_COLUMN_NAME + ") VALUES (?, ?, ?)");
+                + "(" + ACCT_NO_COLUMN_NAME + ", " + BALANCE_COLUMN_NAME + ", "
+                + HOLDER_FK_COLUMN_NAME + ") VALUES (?, ?, ?)");
 
         findHolderPKStmt = connection.prepareStatement("SELECT " + HOLDER_PK_COLUMN_NAME
-            + " FROM " + HOLDER_TABLE_NAME + " WHERE " + HOLDER_COLUMN_NAME + " = ?");
+                + " FROM " + HOLDER_TABLE_NAME + " WHERE " + HOLDER_COLUMN_NAME + " = ?");
 
         findAccountByAcctNoStmt = connection.prepareStatement("SELECT a." + ACCT_NO_COLUMN_NAME
-            + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "
-            + ACCT_TABLE_NAME + " a INNER JOIN " + HOLDER_TABLE_NAME + " h USING ("
-            + HOLDER_PK_COLUMN_NAME + ") WHERE a." + ACCT_NO_COLUMN_NAME + " = ?");
+                + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "
+                + ACCT_TABLE_NAME + " a INNER JOIN " + HOLDER_TABLE_NAME + " h USING ("
+                + HOLDER_PK_COLUMN_NAME + ") WHERE a." + ACCT_NO_COLUMN_NAME + " = ?");
 
-        findAccountByAcctNoStmtLockingForUpdate = connection.prepareStatement("SELECT a." 
-            + ACCT_NO_COLUMN_NAME + ", a." + BALANCE_COLUMN_NAME + ", h." 
-            + HOLDER_COLUMN_NAME + " from " + ACCT_TABLE_NAME + " a INNER JOIN " 
-            + HOLDER_TABLE_NAME + " h USING (" + HOLDER_PK_COLUMN_NAME + ") WHERE a." 
-            + ACCT_NO_COLUMN_NAME + " = ? FOR UPDATE");
+        findAccountByAcctNoStmtLockingForUpdate = connection.prepareStatement("SELECT a."
+                + ACCT_NO_COLUMN_NAME + ", a." + BALANCE_COLUMN_NAME + ", h."
+                + HOLDER_COLUMN_NAME + " from " + ACCT_TABLE_NAME + " a INNER JOIN "
+                + HOLDER_TABLE_NAME + " h USING (" + HOLDER_PK_COLUMN_NAME + ") WHERE a."
+                + ACCT_NO_COLUMN_NAME + " = ? FOR NO KEY UPDATE");
 
         findAccountByNameStmt = connection.prepareStatement("SELECT a." + ACCT_NO_COLUMN_NAME
-            + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "
-            + ACCT_TABLE_NAME + " a INNER JOIN "
-            + HOLDER_TABLE_NAME + " h ON a." + HOLDER_FK_COLUMN_NAME
-            + " = h." + HOLDER_PK_COLUMN_NAME + " WHERE h." + HOLDER_COLUMN_NAME + " = ?");
+                + ", a." + BALANCE_COLUMN_NAME + ", h." + HOLDER_COLUMN_NAME + " from "
+                + ACCT_TABLE_NAME + " a INNER JOIN "
+                + HOLDER_TABLE_NAME + " h ON a." + HOLDER_FK_COLUMN_NAME
+                + " = h." + HOLDER_PK_COLUMN_NAME + " WHERE h." + HOLDER_COLUMN_NAME + " = ?");
 
         findAllAccountsStmt = connection.prepareStatement("SELECT h." + HOLDER_COLUMN_NAME
-            + ", a." + ACCT_NO_COLUMN_NAME + ", a." + BALANCE_COLUMN_NAME + " FROM "
-            + HOLDER_TABLE_NAME + " h INNER JOIN " + ACCT_TABLE_NAME + " a ON a."
-            + HOLDER_FK_COLUMN_NAME + " = h." + HOLDER_PK_COLUMN_NAME);
+                + ", a." + ACCT_NO_COLUMN_NAME + ", a." + BALANCE_COLUMN_NAME + " FROM "
+                + HOLDER_TABLE_NAME + " h INNER JOIN " + ACCT_TABLE_NAME + " a ON a."
+                + HOLDER_FK_COLUMN_NAME + " = h." + HOLDER_PK_COLUMN_NAME);
 
         changeBalanceStmt = connection.prepareStatement("UPDATE " + ACCT_TABLE_NAME
-            + " SET " + BALANCE_COLUMN_NAME + " = ? WHERE " + ACCT_NO_COLUMN_NAME + " = ? ");
+                + " SET " + BALANCE_COLUMN_NAME + " = ? WHERE " + ACCT_NO_COLUMN_NAME + " = ? ");
 
         deleteAccountStmt = connection.prepareStatement("DELETE FROM " + ACCT_TABLE_NAME
-            + " WHERE " + ACCT_NO_COLUMN_NAME + " = ?");
+                + " WHERE " + ACCT_NO_COLUMN_NAME + " = ?");
     }
+
     private void handleException(String failureMsg, Exception cause) throws BankDBException {
         String completeFailureMsg = failureMsg;
         try {
             connection.rollback();
         } catch (SQLException rollbackExc) {
-            completeFailureMsg = completeFailureMsg + 
-            ". Also failed to rollback transaction because of: " + rollbackExc.getMessage();
+            completeFailureMsg = completeFailureMsg +
+                    ". Also failed to rollback transaction because of: " + rollbackExc.getMessage();
         }
 
         if (cause != null) {
@@ -329,7 +331,7 @@ public class BankDAO {
     }
 
     private int createAccountNo() {
-        return (int)Math.floor(Math.random() * Integer.MAX_VALUE);
+        return (int) Math.floor(Math.random() * Integer.MAX_VALUE);
     }
 
     private int findHolderPKByName(String holderName) throws SQLException {
